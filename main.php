@@ -6,7 +6,7 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Create user directory if it doesn't exist
+// Creem directoriul de useri daca nu exista
 $user_dir = 'user_pages/' . preg_replace('/[^a-zA-Z0-9]/', '', $_SESSION['user_id']);
 if (!file_exists($user_dir)) {
     mkdir($user_dir, 0755, true);
@@ -14,18 +14,20 @@ if (!file_exists($user_dir)) {
     file_put_contents("$user_dir/My First Page.txt", 'Welcome to your notebook! You can start writing here or you can add a new page to write on.');
 }
 
-// Get all pages
+// luam toate paginile
 $pages = [];
 foreach (glob("$user_dir/*.txt") as $file) {
     $page_name = basename($file, '.txt');
     $pages[$page_name] = file_get_contents($file);
 }
 
-// If no pages exist (shouldn't happen, but just in case)
+// Daca pagina nu exista
 if (empty($pages)) {
     $pages['My First Page'] = 'Welcome to your notebook! You can start writing here or you can add a new page to write on.';
     file_put_contents("$user_dir/My First Page.txt", $pages['My First Page']);
 }
+
+$text_display = true;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['content']) && isset($_POST['current_page'])) {
@@ -35,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pages[$page_name] = $_POST['content'];
     }
 
-    if (isset($_POST['new_page']) && !empty($_POST['new_page'])) {
+    if (isset($_POST['new_page'])) {
         $new_page = $_POST['new_page'];
         $sanitized_name = str_replace(['/', '\\', '.php'], '', $new_page);
         file_put_contents("$user_dir/$sanitized_name.txt", '');
@@ -47,6 +49,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $sanitized_name = str_replace(['/', '\\', '.php'], '', $page_to_delete);
         unlink("$user_dir/$sanitized_name.txt");
         unset($pages[$page_to_delete]);
+    }
+
+    if (isset($_POST['view_text'])) {
+        $text_display = true;
+    }
+    if (isset($_POST['view_code'])) {
+        $text_display = false;
     }
 }
 
@@ -64,6 +73,17 @@ $current_page = isset($_GET['page']) ? $_GET['page'] : array_key_first($pages);
         margin: 0;
         padding: 20px;
         background-color: #1a1a1a;
+    }
+
+    #TextCod {
+        width: 100%;
+        height: calc(100% - 100px);
+    }
+
+
+    #TextView {
+        width: 100%;
+        height: calc(100% - 100px);
     }
 
     .container {
@@ -106,11 +126,15 @@ $current_page = isset($_GET['page']) ? $_GET['page'] : array_key_first($pages);
         padding: 20px;
         border-radius: 5px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+        button {
+            margin: 10px 5px;
+        }
     }
 
     textarea {
         width: 100%;
-        height: calc(100% - 50px);
+        height: calc(100% - 100px);
         padding: 10px;
         background-color: #2d2d2d;
         color: #e0e0e0;
@@ -177,9 +201,19 @@ $current_page = isset($_GET['page']) ? $_GET['page'] : array_key_first($pages);
         </nav>
 
         <main>
+
             <form method="POST">
+                <button type="submit" name="view_code">View Code</button>
+                <button type="submit" name="view_text">View Text</button>
                 <input type="hidden" name="current_page" value="<?= htmlspecialchars($current_page) ?>">
-                <textarea name="content"><?= htmlspecialchars($pages[$current_page]) ?></textarea>
+                <textarea id="TextCod" name="content" <?php if ($text_display) {
+                    echo "hidden";
+                } ?>><?= htmlspecialchars($pages[$current_page]) ?></textarea>
+                <div id="TextView" <?php if (!$text_display) {
+                    echo "hidden";
+                } ?>>
+                    <?php echo $_POST["content"]; ?>
+                </div>
                 <div class="buttons">
                     <button type="submit">Save</button>
                     <?php if (count($pages) > 1): ?>
