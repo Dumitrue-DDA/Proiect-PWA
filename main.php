@@ -84,6 +84,13 @@ $current_page = isset($_GET['page']) ? $_GET['page'] : array_key_first($pages);
     #TextView {
         width: 100%;
         height: calc(100% - 100px);
+        padding: 10px;
+        background-color: #2d2d2d;
+        color: #e0e0e0;
+        border: none;
+        resize: none;
+        overflow-y: auto;
+        box-sizing: border-box;
     }
 
     .container {
